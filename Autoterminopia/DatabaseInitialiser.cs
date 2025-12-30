@@ -1,104 +1,49 @@
 ﻿using Dapper;
 using Microsoft.Data.Sqlite;
 
-internal class DatabaseInitialiser
+namespace Autoterminopia
 {
-    public DatabaseInitialiser(string databasePath)
+    internal class DatabaseInitialiser
     {
-        using var connection = new SqliteConnection($"Data Source={databasePath}");
-        connection.Open();
+        private readonly string _databasePath;
+        private static readonly List<string> tables = new([
+            "CREATE TABLE IF NOT EXISTS Players (\r\n                Id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n                Name TEXT NOT NULL,\r\n                Level INTEGER NOT NULL CHECK(Level >= 1),\r\n                XP REAL NOT NULL,\r\n                Gold INTEGER NOT NULL,\r\n                CurrentHP REAL NOT NULL\r\n            );",
+            "CREATE TABLE IF NOT EXISTS PlayerStats (\r\n                PlayerId INTEGER PRIMARY KEY NOT NULL,\r\n                BaseAttackPower REAL NOT NULL,\r\n                BaseAttackSpeed REAL NOT NULL,\r\n                BaseDefense REAL NOT NULL,\r\n                BaseMaxHP REAL NOT NULL,\r\n                FOREIGN KEY (PlayerId) REFERENCES Players(Id)\r\n            );",
+            "CREATE TABLE IF NOT EXISTS Floors (\r\n                Id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n                Name TEXT NOT NULL,\r\n                MinLevel INTEGER NOT NULL,\r\n                MaxLevel INTEGER NOT NULL\r\n            );",
+            "CREATE TABLE IF NOT EXISTS EnemyTemplates (\r\n                Id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n                Name TEXT NOT NULL,\r\n                FloorId INTEGER NOT NULL,\r\n                BaseHP REAL NOT NULL,\r\n                BaseAttackPower REAL NOT NULL,\r\n                BaseAttackSpeed REAL NOT NULL,\r\n                XPReward REAL NOT NULL,\r\n                SpawnWeight INTEGER NOT NULL,\r\n                FOREIGN KEY (FloorId) REFERENCES Floors(Id)\r\n            );",
+            "CREATE TABLE IF NOT EXISTS ItemTemplates (\r\n                Id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n                FloorId INTEGER NOT NULL,\r\n                Name TEXT NOT NULL,\r\n                ItemType TEXT NOT NULL,\r\n                Rarity INTEGER NOT NULL CHECK (Rarity IN(1,2,3,4)),\r\n                RequiredLevel INTEGER NOT NULL,\r\n                AttackBonus REAL NOT NULL,\r\n                AttackSpeedBonus REAL NOT NULL,\r\n                DefenseBonus REAL NOT NULL,\r\n                MaxHPBonus REAL NOT NULL,\r\n                GoldValue REAL NOT NULL DEFAULT 0,\r\n                FOREIGN KEY (FloorId) REFERENCES Floors(Id)\r\n            );",
+            "CREATE TABLE IF NOT EXISTS FloorDrops (\r\n                FloorId INTEGER NOT NULL,\r\n                ItemTemplateId INTEGER NOT NULL,\r\n                Weight INTEGER NOT NULL CHECK (Weight > 0),\r\n                FOREIGN KEY (FloorId) REFERENCES Floors(Id),\r\n                FOREIGN KEY (ItemTemplateId) REFERENCES ItemTemplates(Id),\r\n                PRIMARY KEY (FloorId, ItemTemplateId)\r\n                );",
+            "CREATE TABLE IF NOT EXISTS EnemyDrops (\r\n                EnemyTemplateId INTEGER NOT NULL,\r\n                ItemTemplateId INTEGER NOT NULL,\r\n                Weight INTEGER NOT NULL CHECK (Weight > 0),\r\n                FOREIGN KEY (EnemyTemplateId) REFERENCES EnemyTemplates(Id),\r\n                FOREIGN KEY (ItemTemplateId) REFERENCES ItemTemplates(Id),\r\n                PRIMARY KEY (EnemyTemplateId, ItemTemplateId)\r\n                );",
+            "CREATE TABLE IF NOT EXISTS PlayerInventory (\r\n                PlayerId INTEGER NOT NULL,\r\n                ItemTemplateId INTEGER NOT NULL,\r\n                Quantity INTEGER NOT NULL CHECK(Quantity >= 0),\r\n                FOREIGN KEY (PlayerId) REFERENCES Players(Id),\r\n                FOREIGN KEY (ItemTemplateId) REFERENCES ItemTemplates(Id),\r\n                PRIMARY KEY (PlayerId, ItemTemplateId)\r\n            );",
+            "CREATE TABLE IF NOT EXISTS EquippedItems (\r\n                PlayerId INTEGER PRIMARY KEY NOT NULL,\r\n                WeaponItemTemplateId INTEGER,\r\n                ArmourItemTemplateId INTEGER,\r\n                FOREIGN KEY (PlayerId) REFERENCES Players(Id),\r\n                FOREIGN KEY (WeaponItemTemplateId) REFERENCES ItemTemplates(Id),\r\n                FOREIGN KEY (ArmourItemTemplateId) REFERENCES ItemTemplates(Id)\r\n            );"]);
+        public DatabaseInitialiser(string databasePath)
+        {
+            _databasePath = databasePath;
+        }
 
-        connection.Execute("PRAGMA foreign_keys = ON;");
+        public void Initialise()
+        {
+            using var connection = new SqliteConnection($"Data Source={_databasePath}");
+            connection.Open();
 
-        const string createTableQuery = @"
-                CREATE TABLE IF NOT EXISTS Players (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name TEXT NOT NULL,
-                Level INTEGER NOT NULL CHECK(Level >= 1),
-                XP REAL NOT NULL,
-                Gold INTEGER NOT NULL,
-                CurrentHP REAL NOT NULL
-            );
-                CREATE TABLE IF NOT EXISTS PlayerStats (
-                PlayerId INTEGER PRIMARY KEY NOT NULL,
-                BaseAttackPower REAL NOT NULL,
-                BaseAttackSpeed REAL NOT NULL,
-                BaseDefense REAL NOT NULL,
-                BaseMaxHP REAL NOT NULL,
-                FOREIGN KEY (PlayerId) REFERENCES Players(Id)
-            );
-                
-                CREATE TABLE IF NOT EXISTS Floors (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name TEXT NOT NULL,
-                MinLevel INTEGER NOT NULL,
-                MaxLevel INTEGER NOT NULL
-            );
 
-                CREATE TABLE IF NOT EXISTS EnemyTemplates (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name TEXT NOT NULL,
-                FloorId INTEGER NOT NULL,
-                BaseHP REAL NOT NULL,
-                BaseAttackPower REAL NOT NULL,
-                BaseAttackSpeed REAL NOT NULL,
-                XPReward REAL NOT NULL,
-                SpawnWeight INTEGER NOT NULL,
-                FOREIGN KEY (FloorId) REFERENCES Floors(Id)
-            );
+            using var tx = connection.BeginTransaction();
 
-                CREATE TABLE IF NOT EXISTS ItemTemplates (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                FloorId INTEGER NOT NULL,
-                Name TEXT NOT NULL,
-                ItemType TEXT NOT NULL,
-                Rarity INTEGER NOT NULL CHECK (Rarity IN(1,2,3,4)),
-                RequiredLevel INTEGER NOT NULL,
-                AttackBonus REAL NOT NULL,
-                AttackSpeedBonus REAL NOT NULL,
-                DefenseBonus REAL NOT NULL,
-                MaxHPBonus REAL NOT NULL,
-                GoldValue REAL NOT NULL,
-                FOREIGN KEY (FloorId) REFERENCES Floors(Id)
-            );
-
-                CREATE TABLE IF NOT EXISTS FloorDrops (
-                FloorId INTEGER NOT NULL,
-                ItemTemplateId INTEGER NOT NULL,
-                Weight INTEGER NOT NULL CHECK (Weight > 0),
-                FOREIGN KEY (FloorId) REFERENCES Floors(Id),
-                FOREIGN KEY (ItemTemplateId) REFERENCES ItemTemplates(Id),
-                PRIMARY KEY (FloorId, ItemTemplateId)
-                );
-                
-                CREATE TABLE IF NOT EXISTS EnemyDrops (
-                EnemyTemplateId INTEGER NOT NULL,
-                ItemTemplateId INTEGER NOT NULL,
-                Weight INTEGER NOT NULL CHECK (Weight > 0),
-                FOREIGN KEY (EnemyTemplateId) REFERENCES EnemyTemplates(Id),
-                FOREIGN KEY (ItemTemplateId) REFERENCES ItemTemplates(Id),
-                PRIMARY KEY (EnemyTemplateId, ItemTemplateId)
-                );
-
-                CREATE TABLE IF NOT EXISTS PlayerInventory (
-                PlayerId INTEGER NOT NULL,
-                ItemTemplateId INTEGER NOT NULL,
-                Quantity INTEGER NOT NULL CHECK(Quantity >= 0),
-                FOREIGN KEY (PlayerId) REFERENCES Players(Id),
-                FOREIGN KEY (ItemTemplateId) REFERENCES ItemTemplates(Id),
-                PRIMARY KEY (PlayerId, ItemTemplateId)
-            );
+            try
+            {
+                connection.Execute("PRAGMA foreign_keys = ON;", transaction: tx);
+                foreach(var table in tables)
+                {
+                    connection.Execute(table, transaction: tx);
+                }
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
             
-                CREATE TABLE IF NOT EXISTS EquippedItems (
-                PlayerId INTEGER PRIMARY KEY NOT NULL,
-                WeaponItemTemplateId INTEGER,
-                ArmourItemTemplateId INTEGER,
-                FOREIGN KEY (PlayerId) REFERENCES Players(Id),
-                FOREIGN KEY (WeaponItemTemplateId) REFERENCES ItemTemplates(Id),
-                FOREIGN KEY (ArmourItemTemplateId) REFERENCES ItemTemplates(Id)
-            );
-
-                ";
-        connection.Execute(createTableQuery);
+        }
     }
 }
