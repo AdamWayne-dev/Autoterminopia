@@ -68,11 +68,13 @@ namespace Autoterminopia
                 if (itemCount == 0)
                 {
                     const string seedItemsQuery = @"
-                    INSERT INTO ItemTemplates (FloorId, Name, ItemType, Rarity, RequiredLevel, AttackBonus, AttackSpeedBonus, DefenseBonus, MaxHPBonus) VALUES
-                    (1, 'Rusty Sword', 'Weapon', 1, 1, 5, 0.0, 0, 0),
-                    (1, 'Wooden Shield', 'Armour', 1, 1, 0, 0.0, 3, 0),
-                    (1, 'Goblin Sword', 'Weapon', 2, 2, 7, 0.0, 0, 10),
-                    (1, 'Opal Ring', 'Accessory', 3, 3, 0, 0.25, 5, 0),
+                    INSERT INTO ItemTemplates (FloorId, Name, ItemType, Rarity, RequiredLevel, AttackBonus, AttackSpeedBonus, DefenseBonus, MaxHPBonus, GoldValue) VALUES
+                    (1, 'Rusty Sword', 'Weapon', 1, 1, 5, 0.0, 0, 0, 5),
+                    (1, 'Wooden Shield', 'Armour', 1, 1, 0, 0.0, 3, 0, 5),
+                    (1, 'Goblin Sword', 'Weapon', 2, 2, 7, 0.0, 0, 10, 15),
+                    (1, 'Opal Ring', 'Accessory', 3, 3, 0, 0.25, 5, 0, 25),
+                    (1, 'Cloth Scrap', 'Junk', 0, 0, 0, 0.0, 0, 0, 1),
+                    (1, 'Pebble', 'Junk', 0, 0, 0, 0.0, 0, 0, 2),
                     (2, 'Iron Sword', 'Weapon', 1, 6, 10, 0.0, 0, 0),
                     (2, 'Iron Shield', 'Armour', 1, 6, 0, 0.0, 6, 0),
                     (2, 'Bone Shield', 'Armour', 2, 7, 0, 0.0, 10, 15);
@@ -86,18 +88,30 @@ namespace Autoterminopia
                 {
                     const string seedFloorDropsQuery = @"
                     INSERT INTO FloorDrops (FloorId, ItemTemplateId, Weight) VALUES
-                    (1, 1, 70),
-                    (1, 2, 30),
+                    (1, 5, 70),
+                    (1, 6, 30),
                     (2, 5, 60),
                     (2, 6, 40);";
                     connection.Execute(seedFloorDropsQuery, transaction: tx);
+                }
+
+                var enemyCommonDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyCommonDrops;", transaction: tx);
+                if (enemyCommonDropsCount == 0)
+                {
+                    const string seedEnemyCommonDropsQuery = @"
+                    INSERT INTO EnemyCommonDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
+                    (1, 1, 60),
+                    (1, 2, 40),
+                    (2, 1, 50),
+                    (2, 2, 50);";
+                    connection.Execute(seedEnemyCommonDropsQuery, transaction: tx);
                 }
 
                 var enemyDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyDrops;", transaction: tx);
                 if (enemyDropsCount == 0)
                 {
                                         const string seedEnemyDropsQuery = @"
-                    INSERT INTO EnemyDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
+                    INSERT INTO EnemyRareDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
                     (1, 3, 80),
                     (1, 4, 20),
                     (2, 3, 50),
