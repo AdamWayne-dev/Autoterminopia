@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.Sqlite;
+using CsvHelper;
 
 namespace Autoterminopia
 {
@@ -12,7 +13,7 @@ namespace Autoterminopia
         {
             _databasePath = databasePath;
         }
-        
+
         public void Seed()
         {
             using var connection = new SqliteConnection($"Data Source={_databasePath}");
@@ -52,37 +53,36 @@ namespace Autoterminopia
                 ";
                     connection.Execute(seedFloorsQuery, transaction: tx);
                 }
-                var enemyCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyTemplates;", transaction: tx);
-                if (enemyCount == 0)
-                {
-                    const string seedEnemiesQuery = @"
-                    INSERT INTO EnemyTemplates (Name, FloorId, BaseHP, BaseAttackPower, BaseAttackSpeed, XPReward, GoldReward, SpawnWeight) VALUES
-                    ('Goblin', 1, 30, 5, 1.0, 20, 5, 70),
-                    ('Hobgoblin', 1, 50, 10, 0.8, 50, 10, 30),
-                    ('Skeleton Warrior', 2, 80, 15, 0.9, 100, 12, 50),
-                    ('Skeleton Archer', 2, 60, 12, 1.2, 80, 12, 50);
-                ";
-                    connection.Execute(seedEnemiesQuery, transaction: tx);
-                }
+                //var enemyCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyTemplates;", transaction: tx);
+                //if (enemyCount == 0)
+                //{
+                //    var items = GetCSVData<ItemTemplate>("Data/ItemTemplates.csv");
+
+                //    const string seedEnemiesQuery = @"
+                //    INSERT INTO EnemyTemplates (Code, Name, FloorId, BaseHP, BaseAttackPower, BaseAttackSpeed, XPReward, GoldReward)
+                //    VALUES
+                //    (@Name, @)
+                    
+                //";
+                //    connection.Execute(seedEnemiesQuery, transaction: tx);
+                //}
                 var itemCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM ItemTemplates;", transaction: tx);
                 if (itemCount == 0)
                 {
-                    const string seedItemsQuery = @"
-                    INSERT INTO ItemTemplates (FloorId, Name, ItemType, Rarity, RequiredLevel, AttackBonus, AttackSpeedBonus, DefenseBonus, MaxHPBonus, GoldValue) VALUES
-                    (1, 'Rusty Sword', 'Weapon', 1, 1, 5, 0.0, 0, 0, 5),
-                    (1, 'Wooden Shield', 'Armour', 1, 1, 0, 0.0, 3, 0, 5),
-                    (1, 'Goblin Sword', 'Weapon', 2, 2, 7, 0.0, 0, 10, 15),
-                    (1, 'Opal Ring', 'Accessory', 3, 3, 0, 0.25, 5, 0, 25),
-                    (1, 'Cloth Scrap', 'Junk', 0, 0, 0, 0.0, 0, 0, 1),
-                    (1, 'Pebble', 'Junk', 0, 0, 0, 0.0, 0, 0, 2),
-                    (2, 'Iron Sword', 'Weapon', 1, 6, 10, 0.0, 0, 0),
-                    (2, 'Iron Shield', 'Armour', 1, 6, 0, 0.0, 6, 0),
-                    (2, 'Bone Shield', 'Armour', 2, 7, 0, 0.0, 10, 15);
-                    (2, 'Spinal Bow', 'Weapon', 3, 8, 9, 0.0, 0, 0);
-                ";
-                    connection.Execute(seedItemsQuery, transaction: tx);
-                }
+                    var items = GetCSVData<ItemTemplate>("Data/ItemTemplates.csv");
 
+                    const string seedItemsQuery = @"
+                    INSERT INTO ItemTemplates
+                    (Code,Name,ItemType,Rarity,RequiredLevel,AttackBonus,AttackSpeedBonus,DefenseBonus,MaxHPBonus,GoldValue)
+                    VALUES
+                    (@Code,@Name,@ItemType,@Rarity,@RequiredLevel,@AttackBonus,@AttackSpeedBonus,@DefenseBonus,@MaxHPBonus,@GoldValue)
+                    ";
+                    foreach (var item in items)
+                    {
+                        connection.Execute(seedItemsQuery, item, transaction: tx);
+                    }
+                }
+                                   
                 var floorDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM FloorDrops;", transaction: tx);
                 if (floorDropsCount == 0)
                 {
@@ -95,30 +95,30 @@ namespace Autoterminopia
                     connection.Execute(seedFloorDropsQuery, transaction: tx);
                 }
 
-                var enemyCommonDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyCommonDrops;", transaction: tx);
-                if (enemyCommonDropsCount == 0)
-                {
-                    const string seedEnemyCommonDropsQuery = @"
-                    INSERT INTO EnemyCommonDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
-                    (1, 1, 60),
-                    (1, 2, 40),
-                    (2, 1, 50),
-                    (2, 2, 50);";
-                    connection.Execute(seedEnemyCommonDropsQuery, transaction: tx);
-                }
+                //var enemyCommonDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyCommonDrops;", transaction: tx);
+                //if (enemyCommonDropsCount == 0)
+                //{
+                //    const string seedEnemyCommonDropsQuery = @"
+                //    INSERT INTO EnemyCommonDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
+                //    (1, 1, 60),
+                //    (1, 2, 40),
+                //    (2, 1, 50),
+                //    (2, 2, 50);";
+                //    connection.Execute(seedEnemyCommonDropsQuery, transaction: tx);
+                //}
 
-                var enemyDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyDrops;", transaction: tx);
-                if (enemyDropsCount == 0)
-                {
-                                        const string seedEnemyDropsQuery = @"
-                    INSERT INTO EnemyRareDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
-                    (1, 3, 80),
-                    (1, 4, 20),
-                    (2, 3, 50),
-                    (2, 4, 50)";
-                    connection.Execute(seedEnemyDropsQuery, transaction: tx);
+                //var enemyDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyDrops;", transaction: tx);
+                //if (enemyDropsCount == 0)
+                //{
+                //    const string seedEnemyDropsQuery = @"
+                //    INSERT INTO EnemyRareDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
+                //    (1, 3, 80),
+                //    (1, 4, 20),
+                //    (2, 3, 50),
+                //    (2, 4, 50)";
+                //    connection.Execute(seedEnemyDropsQuery, transaction: tx);
 
-                }
+                //}
                 tx.Commit();
             }
             catch
@@ -126,7 +126,60 @@ namespace Autoterminopia
                 tx.Rollback();
                 throw;
             }
-           
+
+        }
+        /// <summary>
+        /// Reads a CSV file and maps each row to an instance of type <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">
+        /// The target type to map CSV rows to. 
+        /// Property names must match the CSV column headers.
+        /// </typeparam>
+        /// <param name="filePath">
+        /// The file path to the CSV file to read.
+        /// </param>
+        /// <returns>
+        /// A list of <typeparamref name="T"/> populated from the CSV file.
+        /// </returns>
+        public List<T> GetCSVData<T>(string filePath)
+        {
+            using var reader = new StreamReader($"{filePath}");
+            using var csv = new CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture);
+            return csv.GetRecords<T>().ToList();
+        }
+        public class EnemyCommonDrop
+        {
+            public int EnemyTemplateId { get; set; }
+            public int ItemTemplateId { get; set; }
+            public int Weight { get; set; }
+        }
+
+        public class EnemyRareDrop
+        {
+            public int EnemyTemplateId { get; set; }
+            public int ItemTemplateId { get; set; }
+            public int Weight { get; set; }
+        }
+
+        public class FloorDrop
+        {
+            public int FloorId { get; set; }
+            public int ItemTemplateId { get; set; }
+            public int Weight { get; set; }
+        }
+
+        public class ItemTemplate
+        {
+            public string Code { get; set; }
+            public string Name { get; set; }
+            public string ItemType { get; set; }
+            public int Rarity { get; set; }
+            public int RequiredLevel { get; set; }
+            public double AttackBonus { get; set; }
+            public double AttackSpeedBonus { get; set; }
+            public double DefenseBonus { get; set; }
+            public double MaxHPBonus { get; set; }
+            public double GoldValue { get; set; }
         }
     }
 }

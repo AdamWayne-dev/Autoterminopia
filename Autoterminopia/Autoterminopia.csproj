@@ -8,9 +8,32 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Data\EnemyCommonDrops.csv" />
+    <None Remove="Data\EnemyRareDrops.csv" />
+    <None Remove="Data\FloorDrops.csv" />
+    <None Remove="Data\ItemTemplates.csv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\EnemyCommonDrops.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\EnemyRareDrops.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\FloorDrops.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\ItemTemplates.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
