@@ -1,0 +1,5 @@
+﻿Code,Name,FloorId,BaseHP,BaseAttackPower,BaseAttackSpeed,XPReward,GoldReward,SpawnWeight
+Goblin,Goblin,1,25,5,1,5,2,80
+HobGoblin,Hob Goblin,1,35,7,1,10,5,20
+SkeletonWarrior,Skeleton Warrior,2,32,10,1,15,10,50
+SkeletonArcher,Skeleton Archer,2,28,9,1.1,15,10,50

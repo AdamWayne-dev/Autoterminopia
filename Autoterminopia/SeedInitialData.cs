@@ -53,19 +53,24 @@ namespace Autoterminopia
                 ";
                     connection.Execute(seedFloorsQuery, transaction: tx);
                 }
-                //var enemyCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyTemplates;", transaction: tx);
-                //if (enemyCount == 0)
-                //{
-                //    var items = GetCSVData<ItemTemplate>("Data/ItemTemplates.csv");
+                var enemyCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyTemplates;", transaction: tx);
+                if (enemyCount == 0)
+                {
+                    var enemies = GetCSVData<EnemyTemplate>("Data/EnemyTemplates.csv");
 
-                //    const string seedEnemiesQuery = @"
-                //    INSERT INTO EnemyTemplates (Code, Name, FloorId, BaseHP, BaseAttackPower, BaseAttackSpeed, XPReward, GoldReward)
-                //    VALUES
-                //    (@Name, @)
+                    const string seedEnemiesQuery = @"
+                    INSERT INTO EnemyTemplates 
+                    (Code, Name, FloorId, BaseHP, BaseAttackPower, BaseAttackSpeed, XPReward, GoldReward, SpawnWeight)
+                    VALUES
+                    (@Code, @Name, @FloorId, @BaseHP, @BaseAttackPower, @BaseAttackSpeed, @XPReward, @GoldReward, @SpawnWeight)
                     
-                //";
-                //    connection.Execute(seedEnemiesQuery, transaction: tx);
-                //}
+                ";
+                    foreach (var enemy in enemies)
+                    {
+                        connection.Execute(seedEnemiesQuery, enemy, transaction: tx);
+                    }
+                }
+
                 var itemCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM ItemTemplates;", transaction: tx);
                 if (itemCount == 0)
                 {
@@ -82,43 +87,54 @@ namespace Autoterminopia
                         connection.Execute(seedItemsQuery, item, transaction: tx);
                     }
                 }
-                                   
+
                 var floorDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM FloorDrops;", transaction: tx);
                 if (floorDropsCount == 0)
                 {
+                    var floorDrops = GetCSVData<FloorDrop>("Data/FloorDrops.csv");
+
                     const string seedFloorDropsQuery = @"
-                    INSERT INTO FloorDrops (FloorId, ItemTemplateId, Weight) VALUES
-                    (1, 5, 70),
-                    (1, 6, 30),
-                    (2, 5, 60),
-                    (2, 6, 40);";
-                    connection.Execute(seedFloorDropsQuery, transaction: tx);
+                    INSERT INTO FloorDrops (FloorId, ItemTemplateId, Weight)
+                    VALUES
+                    (@FloorId, @ItemTemplateId, @Weight)
+                    ;";
+                    foreach (var drop in floorDrops)
+                    {
+                        connection.Execute(seedFloorDropsQuery, drop, transaction: tx);
+                    }
                 }
 
-                //var enemyCommonDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyCommonDrops;", transaction: tx);
-                //if (enemyCommonDropsCount == 0)
-                //{
-                //    const string seedEnemyCommonDropsQuery = @"
-                //    INSERT INTO EnemyCommonDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
-                //    (1, 1, 60),
-                //    (1, 2, 40),
-                //    (2, 1, 50),
-                //    (2, 2, 50);";
-                //    connection.Execute(seedEnemyCommonDropsQuery, transaction: tx);
-                //}
+                var enemyCommonDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyCommonDrops;", transaction: tx);
+                if (enemyCommonDropsCount == 0)
+                {
+                    var commonDrops = GetCSVData<EnemyCommonDrop>("Data/EnemyCommonDrops.csv");
 
-                //var enemyDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyDrops;", transaction: tx);
-                //if (enemyDropsCount == 0)
-                //{
-                //    const string seedEnemyDropsQuery = @"
-                //    INSERT INTO EnemyRareDrops (EnemyTemplateId, ItemTemplateId, Weight) VALUES
-                //    (1, 3, 80),
-                //    (1, 4, 20),
-                //    (2, 3, 50),
-                //    (2, 4, 50)";
-                //    connection.Execute(seedEnemyDropsQuery, transaction: tx);
+                    const string seedEnemyCommonDropsQuery = @"
+                    INSERT INTO EnemyCommonDrops (EnemyTemplateId, ItemTemplateId, Weight)
+                    VALUES
+                    (@EnemyTemplateId, @ItemTemplateId, @Weight)
+                    ";
+                    foreach (var drop in commonDrops)
+                    {
+                        connection.Execute(seedEnemyCommonDropsQuery, drop, transaction: tx);
+                    }
+                }
 
-                //}
+                var enemyDropsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyRareDrops;", transaction: tx);
+                if (enemyDropsCount == 0)
+                {
+                    var rareDrops = GetCSVData<EnemyRareDrop>("Data/EnemyRareDrops.csv");
+                    const string seedEnemyRareDropsQuery = @"
+                    INSERT INTO EnemyRareDrops (EnemyTemplateId, ItemTemplateId, Weight)
+                    VALUES
+                    (@EnemyTemplateId, @ItemTemplateId, @Weight)
+                    ";
+                    foreach (var item in rareDrops)
+                    {
+                        connection.Execute(seedEnemyRareDropsQuery, item, transaction: tx);
+                    }
+
+                }
                 tx.Commit();
             }
             catch
@@ -180,6 +196,20 @@ namespace Autoterminopia
             public double DefenseBonus { get; set; }
             public double MaxHPBonus { get; set; }
             public double GoldValue { get; set; }
+        }
+
+        public class EnemyTemplate
+        {
+            public string Code { get; set; }
+            public string Name { get; set; }
+            public int FloorId { get; set; }
+            public double BaseHP { get; set; }
+            public double BaseAttackPower { get; set; }
+            public double BaseAttackSpeed { get; set; }
+            public double XPReward { get; set; }
+            public double GoldReward { get; set; }
+            public int SpawnWeight { get; set; }
+
         }
     }
 }
