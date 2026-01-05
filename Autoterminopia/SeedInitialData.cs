@@ -23,35 +23,55 @@ namespace Autoterminopia
 
             try
             {
-                // Seeds initial data only if tables are empty
+                // Will seed data only if tables are empty
                 var playerCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Players;", transaction: tx);
                 if (playerCount == 0)
                 {
+
+                    var initialPlayers = GetCSVData<InitialPlayerData>("Data/InitialPlayerData.csv");
+
                     const string seedPlayersQuery = @"
-                    INSERT INTO Players (Name, Level, XP, Gold, CurrentHP) VALUES
-                    ('Hero', 1, 0, 100, 100);
-                ";
-                    connection.Execute(seedPlayersQuery, transaction: tx);
+                    INSERT INTO Players (Name, Level, XP, Gold, CurrentHP) 
+                    VALUES
+                    (@Name, @Level, @XP, @Gold, @CurrentHP);
+                    ";
+                    foreach (var player in initialPlayers)
+                    {
+                        connection.Execute(seedPlayersQuery, player, transaction: tx);
+                    }
                 }
 
                 var playerStatsCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM PlayerStats;", transaction: tx);
                 if (playerStatsCount == 0)
                 {
+                    var initialPlayerStats = GetCSVData<InitialPlayerStatsData>("Data/InitialPlayerStatsData.csv");
+
                     const string seedPlayerStatsQuery = @"
-                    INSERT INTO PlayerStats (PlayerId, BaseAttackPower, BaseAttackSpeed, BaseDefense, BaseMaxHP) VALUES
-                    (1, 10, 1.0, 5, 100);";
-                    connection.Execute(seedPlayerStatsQuery, transaction: tx);
+                    INSERT INTO PlayerStats (PlayerId, BaseAttackPower, BaseAttackSpeed, BaseDefense, BaseMaxHP)
+                    VALUES
+                    (@PlayerId, @BaseAttackPower, @BaseAttackSpeed, @BaseDefense, @BaseMaxHP);
+                    ";
+                    foreach (var stats in initialPlayerStats)
+                    {
+                        connection.Execute(seedPlayerStatsQuery, stats, transaction: tx);
+                    }
                 }
 
                 var floorCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Floors;", transaction: tx);
                 if (floorCount == 0)
                 {
+
+                    var floors = GetCSVData<FloorsData>("Data/FloorsData.csv");
                     const string seedFloorsQuery = @"
-                    INSERT INTO Floors (Name, MinLevel, MaxLevel) VALUES
-                    ('Goblin Caves', 1, 5),
-                    ('Skeleton Crypt', 6, 10);
-                ";
-                    connection.Execute(seedFloorsQuery, transaction: tx);
+                    INSERT INTO Floors (Code, Name, MinLevel, MaxLevel) 
+                    VALUES
+                    (@Code, @Name, @MinLevel, @MaxLevel);
+                    ";
+
+                    foreach (var floor in floors)
+                    {
+                        connection.Execute(seedFloorsQuery, floor, transaction: tx);
+                    }
                 }
                 var enemyCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM EnemyTemplates;", transaction: tx);
                 if (enemyCount == 0)
@@ -64,7 +84,7 @@ namespace Autoterminopia
                     VALUES
                     (@Code, @Name, @FloorId, @BaseHP, @BaseAttackPower, @BaseAttackSpeed, @XPReward, @GoldReward, @SpawnWeight)
                     
-                ";
+                    ";
                     foreach (var enemy in enemies)
                     {
                         connection.Execute(seedEnemiesQuery, enemy, transaction: tx);
@@ -162,6 +182,32 @@ namespace Autoterminopia
             using var reader = new StreamReader($"{filePath}");
             using var csv = new CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture);
             return csv.GetRecords<T>().ToList();
+        }
+
+        public class InitialPlayerData
+        {
+            public string Name { get; set; }
+            public int Level { get; set; }
+            public double XP { get; set; }
+            public double Gold { get; set; }
+            public double CurrentHP { get; set; }
+        }
+
+        public class InitialPlayerStatsData
+        {
+            public int PlayerId { get; set; }
+            public double BaseAttackPower { get; set; }
+            public double BaseAttackSpeed { get; set; }
+            public double BaseDefense { get; set; }
+            public double BaseMaxHP { get; set; }
+        }
+
+        public class FloorsData
+        {
+            public string Code { get; set; }
+            public string Name { get; set; }
+            public int MinLevel { get; set; }
+            public int MaxLevel { get; set; }
         }
         public class EnemyCommonDrop
         {

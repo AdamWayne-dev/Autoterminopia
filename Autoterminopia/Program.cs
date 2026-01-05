@@ -1,5 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace Autoterminopia
 {
@@ -8,9 +7,9 @@ namespace Autoterminopia
         static void Main(string[] args)
         {
             var configuration = new ConfigurationBuilder()
-    .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
-    .Build();
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .Build();
 
             var databasePath = configuration["Database:ConnectionString"];
             var databaseInitialiser = new DatabaseInitialiser(databasePath);

@@ -11,10 +11,17 @@
     <None Remove="Data\EnemyCommonDrops.csv" />
     <None Remove="Data\EnemyRareDrops.csv" />
     <None Remove="Data\FloorDrops.csv" />
+    <None Remove="Data\InitialPlayerStatsData.csv" />
     <None Remove="Data\ItemTemplates.csv" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Data\FloorsData.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\InitialPlayerData.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\EnemyCommonDrops.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -25,6 +32,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\EnemyTemplates.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\InitialPlayerStatsData.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\ItemTemplates.csv">
