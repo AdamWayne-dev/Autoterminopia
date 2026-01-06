@@ -6,6 +6,9 @@ namespace Autoterminopia
     {
         static void Main(string[] args)
         {
+
+            UserInterface ui = new UserInterface();
+
             var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
@@ -17,6 +20,12 @@ namespace Autoterminopia
 
             databaseInitialiser.Initialise();
             seedInitialData.Seed();
+
+            while (true)
+            {
+                ui.ShowMainMenu();
+
+            }
         }
     }
 }
