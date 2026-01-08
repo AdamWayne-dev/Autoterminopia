@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Autoterminopia.Interface;
+using Microsoft.Extensions.Configuration;
 
 namespace Autoterminopia
 {
@@ -21,11 +22,7 @@ namespace Autoterminopia
             databaseInitialiser.Initialise();
             seedInitialData.Seed();
 
-            while (true)
-            {
-                ui.ShowMainMenu();
-
-            }
+            ui.ShowMainMenu();
         }
     }
 }
