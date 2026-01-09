@@ -2,7 +2,7 @@
 using Microsoft.Data.Sqlite;
 using CsvHelper;
 
-namespace Autoterminopia
+namespace Autoterminopia.Data
 {
     internal class SeedInitialData
     {

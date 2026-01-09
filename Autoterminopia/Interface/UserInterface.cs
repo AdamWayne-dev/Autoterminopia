@@ -6,17 +6,87 @@ namespace Autoterminopia.Interface
 {
     internal class UserInterface
     {
-        private readonly ConsoleUi _ui = new();
-        public void ShowMainMenu()
+        public MainMenuOptions PromptMainMenu()
         {
             AnsiConsole.Clear();
-            PromptMainMenuWithDetails();
 
+            var options = Enum.GetValues<MainMenuOptions>().ToArray();
+
+            return PromptMenu(
+                options,
+                option => option switch
+                {
+                    MainMenuOptions.StartGame => "Start Game",
+                    MainMenuOptions.Quit => "Quit",
+                    _ => option.ToString()
+                },
+                option => option switch
+                {
+                    MainMenuOptions.StartGame =>
+                        "[bold]Start a new adventure[/]\nBegin your journey in Autoterminopia.",
+                    MainMenuOptions.Quit =>
+                        "[bold]Quit[/]\nReturn to the mundane world (coward).",
+                    _ => "[grey]...[/]"
+                },
+                header: "Main Menu",
+                detailsHeader: "Pixel Lord"
+            );
         }
 
-        private MainMenuOptions PromptMainMenuWithDetails()
+        public void PromptAdventureMenu()
         {
-            var options = Enum.GetValues<MainMenuOptions>().ToArray();
+            AnsiConsole.Clear();
+            var options = Enum.GetValues<AdventureMenuOptions>().ToArray();
+            var choice = PromptMenu(
+                options,
+                option => option switch
+                {
+                    AdventureMenuOptions.Explore => "Explore",
+                    AdventureMenuOptions.ViewStats => "View Stats",
+                    AdventureMenuOptions.ViewInventory => "View Inventory",
+                    AdventureMenuOptions.Shop => "Shop",
+                    AdventureMenuOptions.ExitToMainMenu => "Exit to Main Menu",
+                    _ => option.ToString()
+                },
+                option => option switch
+                {
+                    AdventureMenuOptions.Explore => "[bold]Explore the world[/]\nVenture into unknown territories and face challenges.",
+                    AdventureMenuOptions.ViewStats => "[bold]View your stats[/]\nCheck your character's attributes and progress.",
+                    AdventureMenuOptions.ViewInventory => "[bold]View your inventory[/]\nSee the items you have collected on your journey.",
+                    AdventureMenuOptions.Shop => "[bold]Visit the shop[/]\nBuy and sell items to aid you in your adventure.",
+                    AdventureMenuOptions.ExitToMainMenu => "[bold]Exit to Main Menu[/]\nReturn to the main menu to start a new game or quit.",
+                    _ => "[grey]...[/]"
+                },
+                header: "Adventure Menu",
+                detailsHeader: "Choose Your Action"
+            );
+
+            switch (choice)
+            {
+                case AdventureMenuOptions.Explore:
+                    Explore();
+                    break;
+                case AdventureMenuOptions.ViewStats:
+                    ViewStats();
+                    break;
+                case AdventureMenuOptions.ViewInventory:
+                    ViewInventory();
+                    break;
+                case AdventureMenuOptions.Shop:
+                    Shop();
+                    break;
+                case AdventureMenuOptions.ExitToMainMenu:
+                    PromptMainMenu();
+                    break;
+            }
+        }
+
+        public T PromptMenu<T>(
+                IReadOnlyList<T> options, Func<T, string> label, Func<T, string> description,
+                string header = "Menu",
+                string detailsHeader = "Info"
+        )
+        {
             int selected = 0;
 
             var layout = new Layout()
@@ -25,13 +95,6 @@ namespace Autoterminopia.Interface
                     new Layout("details").Ratio(3)
                 );
 
-            string GetDetails(MainMenuOptions option) => option switch
-            {
-                MainMenuOptions.StartGame => "[bold]Start a new adventure[/]\nBegin your journey in Autoterminopia.",
-                MainMenuOptions.Quit => "[bold]Quit[/]\nReturn to the mundane world (coward).",
-                _ => "[grey]No description yet.[/]"
-            };
-
             IRenderable BuildMenu()
             {
                 var table = new Table()
@@ -39,54 +102,51 @@ namespace Autoterminopia.Interface
                     .HideHeaders()
                     .AddColumn("");
 
-                for (int i = 0; i < options.Length; i++)
+                for (int i = 0; i < options.Count; i++)
                 {
                     var isSelected = i == selected;
                     var prefix = isSelected ? "[yellow]>[/] " : "  ";
-                    var label = options[i].ToString();
+                    var text = label(options[i]);
 
-                    // Highlight the selected row
                     var rowText = isSelected
-                        ? $"{prefix}[black on yellow]{label}[/]"
-                        : $"{prefix}{label}";
+                        ? $"{prefix}[black on yellow]{text}[/]"
+                        : $"{prefix}{text}";
 
                     table.AddRow(rowText);
                 }
 
                 return new Panel(table)
                     .Border(BoxBorder.Rounded)
-                    .Header(" Main Menu ")
+                    .Header($" {header} ")
                     .Padding(1, 0);
             }
 
             IRenderable BuildDetails()
-                => new Panel(GetDetails(options[selected]))
+                => new Panel(description(options[selected]))
                     .Border(BoxBorder.Rounded)
-                    .Header(" Pixel Lord ")
+                    .Header($" {detailsHeader} ")
                     .Padding(1, 1);
 
             layout["menu"].Update(BuildMenu());
             layout["details"].Update(BuildDetails());
 
-            MainMenuOptions chosen = default;
+            var chosen = default(T)!;
 
             AnsiConsole.Live(layout).Start(ctx =>
             {
                 ConsoleKey key;
                 do
                 {
-                    // Render current state
                     layout["menu"].Update(BuildMenu());
                     layout["details"].Update(BuildDetails());
                     ctx.Refresh();
 
-                    // Read input
                     key = Console.ReadKey(true).Key;
 
                     if (key == ConsoleKey.UpArrow)
-                        selected = (selected - 1 + options.Length) % options.Length;
+                        selected = (selected - 1 + options.Count) % options.Count;
                     else if (key == ConsoleKey.DownArrow)
-                        selected = (selected + 1) % options.Length;
+                        selected = (selected + 1) % options.Count;
 
                 } while (key != ConsoleKey.Enter);
 
@@ -95,6 +155,8 @@ namespace Autoterminopia.Interface
 
             return chosen;
         }
+
+
     }
 }
 

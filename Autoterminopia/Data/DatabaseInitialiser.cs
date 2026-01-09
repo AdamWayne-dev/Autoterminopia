@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.Sqlite;
 
-namespace Autoterminopia
+namespace Autoterminopia.Data
 {
     internal class DatabaseInitialiser
     {

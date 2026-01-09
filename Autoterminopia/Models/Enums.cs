@@ -8,7 +8,7 @@
             Quit = 2
         }
 
-        public enum InGameMenuOptions
+        public enum AdventureMenuOptions
         {
             Explore = 1,
             ViewStats = 2,
