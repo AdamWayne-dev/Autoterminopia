@@ -1,5 +1,6 @@
 ﻿using Autoterminopia.Interface;
 using Autoterminopia.Game;
+using static Autoterminopia.Models.Enums;
 
 namespace Autoterminopia.Screens
 {
@@ -11,8 +12,17 @@ namespace Autoterminopia.Screens
 
         public IScreen Run(GameState state)
         {
-            _ui.PromptAdventureMenu();
-            return this;
+            var choice = _ui.PromptAdventureMenu();
+            
+            return choice switch
+            {
+                AdventureMenuOptions.Explore => new ExploreScreen(_ui),
+                AdventureMenuOptions.ViewStats => new ViewStatsScreen(_ui),
+                AdventureMenuOptions.ViewInventory => new ViewInventoryScreen(_ui),
+                AdventureMenuOptions.Shop => new ShopScreen(_ui),
+                AdventureMenuOptions.ExitToMainMenu => new MainMenuScreen(_ui),
+                _ => this
+            };
         }
     }
 }

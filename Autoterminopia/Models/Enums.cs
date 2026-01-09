@@ -5,9 +5,15 @@
         public enum MainMenuOptions
         {
             StartGame = 1,
-            Quit = 2
+            Options = 2,
+            Quit = 3
         }
 
+        public enum OptionsMenuOptions
+        {
+            ResetAllData = 1,
+            ReturnToMainMenu = 2
+        }
         public enum AdventureMenuOptions
         {
             Explore = 1,

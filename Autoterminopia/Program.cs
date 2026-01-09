@@ -1,5 +1,8 @@
 ﻿using Autoterminopia.Interface;
 using Microsoft.Extensions.Configuration;
+using Autoterminopia.Data;
+using Autoterminopia.Screens;
+using Autoterminopia.Game;
 
 namespace Autoterminopia
 {
@@ -7,9 +10,7 @@ namespace Autoterminopia
     {
         static void Main(string[] args)
         {
-
-            UserInterface ui = new UserInterface();
-
+ 
             var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
@@ -22,7 +23,13 @@ namespace Autoterminopia
             databaseInitialiser.Initialise();
             seedInitialData.Seed();
 
-            ui.ShowMainMenu();
+            var ui = new UserInterface();
+            var gameState = new GameState();
+
+            IScreen startScreen = new MainMenuScreen(ui);
+
+            var game = new GameController(gameState, startScreen);
+            game.Run();
         }
     }
 }

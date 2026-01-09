@@ -4,11 +4,11 @@ using static Autoterminopia.Models.Enums;
 
 namespace Autoterminopia.Screens
 {
-    internal class ExitScreen : IScreen
+    internal class ViewStatsScreen : IScreen
     {
         private readonly UserInterface _ui;
 
-        public ExitScreen(UserInterface ui) => _ui = ui;
+        public ViewStatsScreen(UserInterface ui) => _ui = ui;
 
         public IScreen Run(GameState state)
         {

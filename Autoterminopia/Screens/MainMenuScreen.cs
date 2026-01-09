@@ -17,7 +17,8 @@ namespace Autoterminopia.Screens
             return choice switch
             {
                 MainMenuOptions.StartGame => new AdventureMenuScreen(_ui),
-                MainMenuOptions.Quit => new ExitScreen(),
+                MainMenuOptions.Options => new OptionsScreen(_ui),
+                MainMenuOptions.Quit => new ExitScreen(_ui),
                 _ => this
             };
         }

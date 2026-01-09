@@ -24,20 +24,46 @@ namespace Autoterminopia.Interface
                 {
                     MainMenuOptions.StartGame =>
                         "[bold]Start a new adventure[/]\nBegin your journey in Autoterminopia.",
+                    MainMenuOptions.Options =>
+                        "[bold]Options[/]\nAdjust your game settings.",
                     MainMenuOptions.Quit =>
                         "[bold]Quit[/]\nReturn to the mundane world (coward).",
                     _ => "[grey]...[/]"
                 },
                 header: "Main Menu",
-                detailsHeader: "Pixel Lord"
+                detailsHeader: "Make a choice"
             );
         }
 
-        public void PromptAdventureMenu()
+        public OptionsMenuOptions PromptOptionsMenu()
         {
             AnsiConsole.Clear();
+            var options = Enum.GetValues<OptionsMenuOptions>().ToArray();
+            return PromptMenu(
+                options,
+                option => option switch
+                {
+                    OptionsMenuOptions.ResetAllData => "Reset all save file data",
+                    OptionsMenuOptions.ReturnToMainMenu => "Back to Main Menu",
+                    _ => option.ToString()
+                },
+                option => option switch
+                {
+                    OptionsMenuOptions.ResetAllData => "[bold red]WARNING[/]\nTHIS WILL RESET YOUR SAVE FILE TO THE DEFAULT STATE.",
+                    OptionsMenuOptions.ReturnToMainMenu => "[bold green]NOTE[/]\nReturn to the main menu.",
+                    _ => "[grey]...[/]"
+                },
+                header: "Options Menu",
+                detailsHeader: "Select an Option"
+            );
+        }
+        public AdventureMenuOptions PromptAdventureMenu()
+        {
+            AnsiConsole.Clear();
+
             var options = Enum.GetValues<AdventureMenuOptions>().ToArray();
-            var choice = PromptMenu(
+
+            return PromptMenu(
                 options,
                 option => option switch
                 {
@@ -60,25 +86,6 @@ namespace Autoterminopia.Interface
                 header: "Adventure Menu",
                 detailsHeader: "Choose Your Action"
             );
-
-            switch (choice)
-            {
-                case AdventureMenuOptions.Explore:
-                    Explore();
-                    break;
-                case AdventureMenuOptions.ViewStats:
-                    ViewStats();
-                    break;
-                case AdventureMenuOptions.ViewInventory:
-                    ViewInventory();
-                    break;
-                case AdventureMenuOptions.Shop:
-                    Shop();
-                    break;
-                case AdventureMenuOptions.ExitToMainMenu:
-                    PromptMainMenu();
-                    break;
-            }
         }
 
         public T PromptMenu<T>(
