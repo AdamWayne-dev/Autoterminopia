@@ -28,5 +28,13 @@
             ChooseLevel = 1,
             ReturnToTown = 2
         }
+
+        public enum EncounterList
+        {
+            FindItem = 1,
+            BattleEnemy = 2,
+            DiscoverLocation = 3,
+            NothingHappens = 4
+        }
     }
 }
