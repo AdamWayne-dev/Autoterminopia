@@ -7,8 +7,13 @@ namespace Autoterminopia.Screens
     internal class AdventureMenuScreen: IScreen
     {
         private readonly UserInterface _ui;
+        private readonly ExploreService _explore;
 
-        public AdventureMenuScreen(UserInterface ui) => _ui = ui;
+        public AdventureMenuScreen(UserInterface ui, ExploreService ex)
+        {
+            _ui = ui; 
+            _explore = ex;
+        }
 
         public IScreen Run(GameState state)
         {
