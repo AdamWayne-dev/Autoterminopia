@@ -7,13 +7,14 @@ namespace Autoterminopia.Screens
     internal class ExitScreen : IScreen
     {
         private readonly UserInterface _ui;
+        private readonly ExploreService _exploreService;
 
         public ExitScreen(UserInterface ui) => _ui = ui;
 
         public IScreen Run(GameState state)
         {
 
-            return new AdventureMenuScreen(_ui);
+            return new AdventureMenuScreen(_ui, _exploreService);
         }
     }
 }

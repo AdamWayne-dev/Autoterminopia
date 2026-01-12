@@ -7,13 +7,15 @@ namespace Autoterminopia.Screens
     internal class ShopScreen : IScreen
     {
         private readonly UserInterface _ui;
+        private readonly ExploreService _exploreService;
+
 
         public ShopScreen(UserInterface ui) => _ui = ui;
 
         public IScreen Run(GameState state)
         {
 
-            return new AdventureMenuScreen(_ui);
+            return new AdventureMenuScreen(_ui, _exploreService);
         }
     }
 }

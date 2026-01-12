@@ -7,8 +7,13 @@ namespace Autoterminopia.Screens
     internal class MainMenuScreen : IScreen
     {
         private readonly UserInterface _ui;
+        private readonly ExploreService _exploreService;
 
-        public MainMenuScreen(UserInterface ui) => _ui = ui;
+        public MainMenuScreen(UserInterface ui, ExploreService ex)
+        {
+            _ui = ui; 
+            _exploreService = ex;
+        }
 
         public IScreen Run(GameState state)
         {
@@ -16,7 +21,7 @@ namespace Autoterminopia.Screens
 
             return choice switch
             {
-                MainMenuOptions.StartGame => new AdventureMenuScreen(_ui),
+                MainMenuOptions.StartGame => new AdventureMenuScreen(_ui, _exploreService),
                 MainMenuOptions.Options => new OptionsScreen(_ui),
                 MainMenuOptions.Quit => new ExitScreen(_ui),
                 _ => this

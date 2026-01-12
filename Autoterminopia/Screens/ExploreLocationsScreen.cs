@@ -8,22 +8,22 @@ using System.Diagnostics;
 internal class ExploreLocationsScreen : IScreen
 {
     private readonly UserInterface _ui;
-    private readonly ExploreService _explore; // your mechanics class
+    private readonly ExploreService _exploreService;
 
-    public ExploreLocationsScreen(UserInterface ui, ExploreService explore)
+    public ExploreLocationsScreen(UserInterface ui, ExploreService exploreService)
     {
-        _ui = ui;
-        _explore = explore;
+        _ui = ui ?? throw new ArgumentNullException(nameof(ui));
+        _exploreService = exploreService ?? throw new ArgumentNullException(nameof(exploreService));
     }
 
     public IScreen Run(GameState state)
     {
-        // Replace these with your real area/location models later
         var locations = new[]
         {
             new LocationChoice("Forest", new[] { "Path", "Hidden Grove", "Ruins Edge" }),
             new LocationChoice("Caves",  new[] { "Mouth", "Deep Tunnel", "Crystal Chamber" }),
         };
+
 
         int locIndex = 0;
         int subIndex = 0;
@@ -31,107 +31,150 @@ internal class ExploreLocationsScreen : IScreen
         bool exploring = false;
         bool paused = false;
 
-        var log = new List<string>();
-        log.Add("[grey]Choose a location, press Enter to explore.[/]");
+        var log = new List<string>
+        {
+            "[grey]Choose a location, press Enter to explore.[/]"
+        };
 
         var stopwatch = Stopwatch.StartNew();
         var lastTickAt = stopwatch.Elapsed;
 
-        TimeSpan tickInterval = TimeSpan.FromSeconds(2); // later: mastery can affect this
+        TimeSpan tickInterval = TimeSpan.FromSeconds(2);
 
-        var layout = new Layout()
-            .SplitColumns(
-                new Layout("left").Ratio(2),
-                new Layout("right").Ratio(3)
-            );
+        // ---------- BUILDERS ----------
 
-        IRenderable BuildLeft()
+        IRenderable BuildLeftContent()
         {
-            var table = new Table().Border(TableBorder.None).HideHeaders();
-            table.AddColumn("");
+            var table = new Table()
+                .Border(TableBorder.None)
+                .HideHeaders()
+                .AddColumn("");
 
             for (int i = 0; i < locations.Length; i++)
             {
-                var isSelectedLoc = i == locIndex;
-                var prefix = isSelectedLoc ? "[yellow]>[/] " : "  ";
-                var label = isSelectedLoc
-                    ? $"{prefix}[black on yellow]{locations[i].Name}[/]"
-                    : $"{prefix}{locations[i].Name}";
+                bool isSelectedLoc = i == locIndex;
+                string locPrefix = isSelectedLoc ? "[yellow]>[/] " : "  ";
 
-                table.AddRow(label);
+                string locRow = isSelectedLoc
+                    ? $"{locPrefix}[black on yellow]{locations[i].Name}[/]"
+                    : $"{locPrefix}{locations[i].Name}";
 
-                // show sublocations for selected location
+                table.AddRow(locRow);
+
                 if (isSelectedLoc)
                 {
                     var subs = locations[i].Sublocations;
                     for (int s = 0; s < subs.Length; s++)
                     {
-                        var isSelectedSub = s == subIndex;
-                        var subPrefix = isSelectedSub ? "    [yellow]•[/] " : "      ";
-                        var subLabel = isSelectedSub
+                        bool isSelectedSub = s == subIndex;
+                        string subPrefix = isSelectedSub ? "    [yellow]•[/] " : "      ";
+
+                        string subRow = isSelectedSub
                             ? $"{subPrefix}[black on yellow]{subs[s]}[/]"
                             : $"{subPrefix}{subs[s]}";
-                        table.AddRow(subLabel);
+
+                        table.AddRow(subRow);
                     }
                 }
             }
 
-            var hint = "[grey]↑/↓ location  ←/→ sub  Enter explore  Space pause  Esc back[/]";
-            return new Panel(new Rows(table, new Markup(hint)))
-                .Border(BoxBorder.Rounded)
-                .Header(" Locations ")
-                .Padding(1, 0);
+            var hint = new Markup("[grey]↑/↓ location  ←/→ sub  Enter explore  Space pause  Esc back[/]");
+            return new Rows(table, hint);
         }
 
-        IRenderable BuildRight()
+        IRenderable BuildExplorationPanel()
         {
             var selected = locations[locIndex];
             var sub = selected.Sublocations[subIndex];
 
             var now = stopwatch.Elapsed;
-            var elapsedSinceTick = now - lastTickAt;
-            var remaining = tickInterval - elapsedSinceTick;
+            var remaining = tickInterval - (now - lastTickAt);
             if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
 
             var status = exploring
                 ? (paused ? "[yellow]Paused[/]" : "[green]Exploring[/]")
                 : "[grey]Idle[/]";
 
-            // show last ~12 log lines
-            var recent = log.Count <= 12 ? log : log.Skip(log.Count - 12).ToList();
-            var logPanel = new Panel(new Markup(string.Join("\n", recent)))
-                .Border(BoxBorder.Rounded)
-                .Header(" Log ")
-                .Padding(1, 1);
-
-            var header = new Markup(
+            var text = new Markup(
                 $"Status: {status}\n" +
-                $"Area: [bold]{selected.Name}[/]  Sub: [bold]{sub}[/]\n" +
+                $"Area: [bold]{selected.Name}[/]   Sub: [bold]{sub}[/]\n" +
                 $"Next tick: [grey]{remaining:mm\\:ss\\.ff}[/]"
             );
 
-            return new Panel(new Rows(header, new Rule(), logPanel))
+            // Only this panel has a border (clean)
+            return new Panel(text)
                 .Border(BoxBorder.Rounded)
                 .Header(" Exploration ")
-                .Padding(1, 1);
+                .Padding(1, 1)
+                .Expand();
         }
 
-        layout["left"].Update(BuildLeft());
-        layout["right"].Update(BuildRight());
-
-        AnsiConsole.Live(layout).Start(ctx =>
+        IRenderable BuildLogPanel()
         {
+            const int maxLines = 14;
+            var recent = log.Count <= maxLines ? log : log.Skip(log.Count - maxLines).ToList();
+
+            return new Panel(new Markup(string.Join("\n", recent)))
+                .Border(BoxBorder.Rounded)
+                .Header(" Log ")
+                .Padding(1, 1)
+                .Expand();
+        }
+
+        IRenderable BuildRightContent()
+        {
+            // Stack the two right panels with a little spacing
+            return new Rows(
+                BuildExplorationPanel(),
+                new Text(""), // spacer line
+                BuildLogPanel()
+            );
+        }
+
+        Table BuildRoot()
+        {
+            // Outer frame + vertical divider handled by the table border
+            var root = new Table()
+            .Border(TableBorder.Rounded)
+            .HideHeaders()
+            .AddColumn(new TableColumn(new Markup("[bold]Locations[/]")).Width(35).NoWrap())
+            .AddColumn(new TableColumn(new Markup("[bold]Details[/]")));
+
+
+            // Important: no borders on the left side content; table is the frame.
+            root.AddRow(
+                BuildLeftContent(),
+                BuildRightContent()
+            );
+
+            return root;
+        }
+
+        void Render(LiveDisplayContext ctx)
+        {
+            ctx.UpdateTarget(BuildRoot());
+            ctx.Refresh();
+        }
+
+        // ---------- LIVE LOOP ----------
+        AnsiConsole.Live(BuildRoot()).Start(ctx =>
+        {
+            // initial paint
+            ctx.Refresh();
+
             while (true)
             {
-                // 1) Input (non-blocking)
-                if (Console.KeyAvailable)
+                bool changed = false;
+
+                while (Console.KeyAvailable)
                 {
+                    changed = true;
                     var key = Console.ReadKey(true).Key;
 
                     if (key == ConsoleKey.Escape)
-                        break;
+                        return;
 
-                    if (!exploring) // only allow changing selection while not exploring (your choice)
+                    if (!exploring)
                     {
                         if (key == ConsoleKey.UpArrow)
                         {
@@ -169,35 +212,27 @@ internal class ExploreLocationsScreen : IScreen
                     }
                 }
 
-                // 2) Tick
                 if (exploring && !paused)
                 {
                     var now = stopwatch.Elapsed;
                     if (now - lastTickAt >= tickInterval)
                     {
+                        changed = true;
                         lastTickAt = now;
 
-                        // Call your actual mechanic here:
-                        // var result = _explore.Tick(state, locations[locIndex], subIndex);
-                        // log.AddRange(result.Lines);
-
-                        // Placeholder:
+                        // Placeholder tick result
                         log.Add("[grey]Tick...[/] You find something interesting.");
                     }
                 }
 
-                // 3) Render
-                layout["left"].Update(BuildLeft());
-                layout["right"].Update(BuildRight());
-                ctx.Refresh();
+                if (changed)
+                    Render(ctx);
 
-                // 4) Throttle loop so it doesn’t melt your CPU
                 Thread.Sleep(33);
             }
         });
 
-        // Back to whatever screen makes sense
-        return new AdventureMenuScreen(_ui, _explore);
+        return new AdventureMenuScreen(_ui, _exploreService);
     }
 
     private record LocationChoice(string Name, string[] Sublocations);

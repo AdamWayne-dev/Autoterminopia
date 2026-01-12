@@ -7,6 +7,8 @@ namespace Autoterminopia.Screens
     internal class OptionsScreen : IScreen
     {
         private readonly UserInterface _ui;
+        private readonly ExploreService _exploreService;
+
 
         public OptionsScreen(UserInterface ui) => _ui = ui;
 
@@ -17,8 +19,8 @@ namespace Autoterminopia.Screens
 
             return choice switch
             {
-                OptionsMenuOptions.ResetAllData => new AdventureMenuScreen(_ui),
-                OptionsMenuOptions.ReturnToMainMenu => new MainMenuScreen(_ui),
+                OptionsMenuOptions.ResetAllData => new AdventureMenuScreen(_ui, _exploreService),
+                OptionsMenuOptions.ReturnToMainMenu => new MainMenuScreen(_ui, _exploreService),
                 _ => this
             };
         }

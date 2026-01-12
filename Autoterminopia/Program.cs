@@ -25,8 +25,9 @@ namespace Autoterminopia
 
             var ui = new UserInterface();
             var gameState = new GameState();
+            var exploreService = new ExploreService();
 
-            IScreen startScreen = new MainMenuScreen(ui);
+            IScreen startScreen = new MainMenuScreen(ui, exploreService);
 
             var game = new GameController(gameState, startScreen);
             game.Run();

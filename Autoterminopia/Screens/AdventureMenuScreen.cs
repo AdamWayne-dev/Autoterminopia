@@ -21,11 +21,11 @@ namespace Autoterminopia.Screens
             
             return choice switch
             {
-                AdventureMenuOptions.Explore => new ExploreScreen(_ui),
+                AdventureMenuOptions.Explore => new ExploreScreen(_ui, _explore),
                 AdventureMenuOptions.ViewStats => new ViewStatsScreen(_ui),
                 AdventureMenuOptions.ViewInventory => new ViewInventoryScreen(_ui),
                 AdventureMenuOptions.Shop => new ShopScreen(_ui),
-                AdventureMenuOptions.ExitToMainMenu => new MainMenuScreen(_ui),
+                AdventureMenuOptions.ExitToMainMenu => new MainMenuScreen(_ui, _explore),
                 _ => this
             };
         }

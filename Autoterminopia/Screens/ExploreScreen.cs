@@ -7,13 +7,16 @@ namespace Autoterminopia.Screens
     internal class ExploreScreen : IScreen
     {
         private readonly UserInterface _ui;
-        private ExploreService exploreService = new ExploreService();
-        public ExploreScreen(UserInterface ui) => _ui = ui;
+        private readonly ExploreService _exploreService;
+        public ExploreScreen(UserInterface ui, ExploreService ex)
+        {
+            _ui = ui;
+            _exploreService = ex;
+        }
 
         public IScreen Run(GameState state)
-        {
-            exploreService.Explore(); 
-            return new AdventureMenuScreen(_ui);
+        { 
+            return new ExploreLocationsScreen(_ui, _exploreService);
         }
     }
 }
