@@ -18,71 +18,82 @@ internal class ExploreLocationsScreen : IScreen
 
     public IScreen Run(GameState state)
     {
+        // Demo data (swap later for real models)
         var locations = new[]
         {
             new LocationChoice("Forest", new[] { "Path", "Hidden Grove", "Ruins Edge" }),
             new LocationChoice("Caves",  new[] { "Mouth", "Deep Tunnel", "Crystal Chamber" }),
         };
 
-
+        // Selection state
         int locIndex = 0;
         int subIndex = 0;
 
+        // Explore state
         bool exploring = false;
         bool paused = false;
 
+        // Log
         var log = new List<string>
         {
-            "[grey]Choose a location, press Enter to explore.[/]"
+            "Choose a location, press Enter to explore."
         };
 
+        // Timer
         var stopwatch = Stopwatch.StartNew();
         var lastTickAt = stopwatch.Elapsed;
-
         TimeSpan tickInterval = TimeSpan.FromSeconds(2);
 
-        // ---------- BUILDERS ----------
+        // Styles (no markup needed)
+        var selectedStyle = new Style(foreground: Color.Black, background: Color.Yellow);
+        var hintStyle = new Style(foreground: Color.Grey);
+        var dimStyle = new Style(foreground: Color.Grey);
 
-        IRenderable BuildLeftContent()
+        // Fixed left pane width = stable layout (tweak to taste)
+        const int LeftWidth = 42;
+
+        // ---------- Render builders ----------
+
+        IRenderable BuildLeftPane()
         {
-            var table = new Table()
-                .Border(TableBorder.None)
-                .HideHeaders()
-                .AddColumn("");
+            var rows = new List<IRenderable>();
+
+            // Title line (optional)
+            rows.Add(new Text("Locations".PadRight(LeftWidth), new Style(decoration: Decoration.Bold)));
+            rows.Add(new Text("".PadRight(LeftWidth)));
 
             for (int i = 0; i < locations.Length; i++)
             {
-                bool isSelectedLoc = i == locIndex;
-                string locPrefix = isSelectedLoc ? "[yellow]>[/] " : "  ";
+                bool locSelected = i == locIndex;
 
-                string locRow = isSelectedLoc
-                    ? $"{locPrefix}[black on yellow]{locations[i].Name}[/]"
-                    : $"{locPrefix}{locations[i].Name}";
+                // IMPORTANT: no extra prefix for selection; same width always
+                string locLine = locations[i].Name.PadRight(LeftWidth);
+                rows.Add(new Text(locLine, locSelected ? selectedStyle : Style.Plain));
 
-                table.AddRow(locRow);
-
-                if (isSelectedLoc)
+                // Show sublocations only for selected location (like you had)
+                if (locSelected)
                 {
                     var subs = locations[i].Sublocations;
                     for (int s = 0; s < subs.Length; s++)
                     {
-                        bool isSelectedSub = s == subIndex;
-                        string subPrefix = isSelectedSub ? "    [yellow]•[/] " : "      ";
+                        bool subSelected = s == subIndex;
 
-                        string subRow = isSelectedSub
-                            ? $"{subPrefix}[black on yellow]{subs[s]}[/]"
-                            : $"{subPrefix}{subs[s]}";
-
-                        table.AddRow(subRow);
+                        // Indentation is constant (doesn't change on selection)
+                        string subLine = ("  " + subs[s]).PadRight(LeftWidth);
+                        rows.Add(new Text(subLine, subSelected ? selectedStyle : dimStyle));
                     }
                 }
+
+                rows.Add(new Text("".PadRight(LeftWidth)));
             }
 
-            var hint = new Markup("[grey]↑/↓ location  ←/→ sub  Enter explore  Space pause  Esc back[/]");
-            return new Rows(table, hint);
+
+            // Wrap the left content in a borderless container;
+            // the outer table provides the frame and divider.
+            return new Rows(rows);
         }
 
-        IRenderable BuildExplorationPanel()
+        IRenderable BuildRightPane()
         {
             var selected = locations[locIndex];
             var sub = selected.Sublocations[subIndex];
@@ -91,61 +102,43 @@ internal class ExploreLocationsScreen : IScreen
             var remaining = tickInterval - (now - lastTickAt);
             if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
 
-            var status = exploring
-                ? (paused ? "[yellow]Paused[/]" : "[green]Exploring[/]")
-                : "[grey]Idle[/]";
+            string status = exploring
+                ? (paused ? "Paused" : "Exploring")
+                : "Idle";
 
-            var text = new Markup(
-                $"Status: {status}\n" +
-                $"Area: [bold]{selected.Name}[/]   Sub: [bold]{sub}[/]\n" +
-                $"Next tick: [grey]{remaining:mm\\:ss\\.ff}[/]"
-            );
-
-            // Only this panel has a border (clean)
-            return new Panel(text)
-                .Border(BoxBorder.Rounded)
-                .Header(" Exploration ")
-                .Padding(1, 1)
-                .Expand();
-        }
-
-        IRenderable BuildLogPanel()
-        {
+            // Show last N lines
             const int maxLines = 14;
             var recent = log.Count <= maxLines ? log : log.Skip(log.Count - maxLines).ToList();
 
-            return new Panel(new Markup(string.Join("\n", recent)))
+            var top = new Panel(new Rows(
+                    new Text($"Status: {status}"),
+                    new Text($"Area: {selected.Name}   Sub: {sub}"),
+                    new Text($"Next tick: {remaining:mm\\:ss\\.ff}", dimStyle)
+                ))
+                .Border(BoxBorder.Rounded)
+                .Header(" Exploration ")
+                .Padding(1, 1);
+
+            var bottom = new Panel(new Text(string.Join("\n", recent), dimStyle))
                 .Border(BoxBorder.Rounded)
                 .Header(" Log ")
-                .Padding(1, 1)
-                .Expand();
-        }
+                .Padding(1, 1);
 
-        IRenderable BuildRightContent()
-        {
-            // Stack the two right panels with a little spacing
-            return new Rows(
-                BuildExplorationPanel(),
-                new Text(""), // spacer line
-                BuildLogPanel()
-            );
+            return new Rows(top, new Text(""), bottom);
         }
 
         Table BuildRoot()
         {
-            // Outer frame + vertical divider handled by the table border
             var root = new Table()
-            .Border(TableBorder.Rounded)
-            .HideHeaders()
-            .AddColumn(new TableColumn(new Markup("[bold]Locations[/]")).Width(35).NoWrap())
-            .AddColumn(new TableColumn(new Markup("[bold]Details[/]")));
+                .Border(TableBorder.Rounded)
+                .HideHeaders()
+                .Expand(); // Fill the console width (prevents “table got smaller”)
 
+            // Left column fixed width, right column auto takes the rest
+            root.AddColumn(new TableColumn("").Width(LeftWidth).NoWrap());
+            root.AddColumn(new TableColumn("")); // no width set => uses remaining space
 
-            // Important: no borders on the left side content; table is the frame.
-            root.AddRow(
-                BuildLeftContent(),
-                BuildRightContent()
-            );
+            root.AddRow(BuildLeftPane(), BuildRightPane());
 
             return root;
         }
@@ -156,16 +149,16 @@ internal class ExploreLocationsScreen : IScreen
             ctx.Refresh();
         }
 
-        // ---------- LIVE LOOP ----------
+        // ---------- Live loop ----------
         AnsiConsole.Live(BuildRoot()).Start(ctx =>
         {
-            // initial paint
             ctx.Refresh();
 
             while (true)
             {
                 bool changed = false;
 
+                // Handle all queued input this frame
                 while (Console.KeyAvailable)
                 {
                     changed = true;
@@ -174,6 +167,7 @@ internal class ExploreLocationsScreen : IScreen
                     if (key == ConsoleKey.Escape)
                         return;
 
+                    // Navigation (only lock selection if you want; currently allow while idle only)
                     if (!exploring)
                     {
                         if (key == ConsoleKey.UpArrow)
@@ -203,15 +197,16 @@ internal class ExploreLocationsScreen : IScreen
                         exploring = true;
                         paused = false;
                         lastTickAt = stopwatch.Elapsed;
-                        log.Add($"[green]Started exploring[/] {locations[locIndex].Name} → {locations[locIndex].Sublocations[subIndex]}");
+                        log.Add($"Started exploring: {locations[locIndex].Name} -> {locations[locIndex].Sublocations[subIndex]}");
                     }
                     else if (key == ConsoleKey.Spacebar && exploring)
                     {
                         paused = !paused;
-                        log.Add(paused ? "[yellow]Paused.[/]" : "[green]Resumed.[/]");
+                        log.Add(paused ? "Paused." : "Resumed.");
                     }
                 }
 
+                // Tick
                 if (exploring && !paused)
                 {
                     var now = stopwatch.Elapsed;
@@ -220,11 +215,12 @@ internal class ExploreLocationsScreen : IScreen
                         changed = true;
                         lastTickAt = now;
 
-                        // Placeholder tick result
-                        log.Add("[grey]Tick...[/] You find something interesting.");
+                        // Placeholder; later replace with your service tick/result
+                        log.Add("Tick... you find something interesting.");
                     }
                 }
 
+                // Render only when something changed (no jitter, no bell spam)
                 if (changed)
                     Render(ctx);
 
